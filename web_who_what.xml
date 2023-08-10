@@ -1,5 +1,8 @@
 <form>
   <label>web who what</label>
+  <init>
+    <unset token="results.what"></unset>
+  </init>
   <search id="wwebww">
     <query>
 | tstats count as Events earliest(_time) as etime latest(_time) as ltime  from datamodel=Web.Web WHERE NOT Web.src IN("192.168.0.*","*:*") groupby _time Web.http_user_agent Web.http_referrer Web.http_method Web.uri_path Web.src Web.url Web.status host
@@ -8,7 +11,7 @@
 | rename src AS clientip
 | lookup dnslookup clientip      
 | fillnull value="(filled null)"
-| eval munge=host+status+url+uri_path+clientip+http_user_agent+http_referrer     
+| eval munge=host+status+url+uri_path+clientip+http_user_agent+http_referrer    
     </query>
     <earliest>$timey.earliest$</earliest>
     <latest>$timey.latest$</latest>
@@ -17,7 +20,7 @@
     <input type="time" token="timey" searchWhenChanged="true">
       <label>when</label>
       <default>
-        <earliest>-4h@h</earliest>
+        <earliest>-4h@m</earliest>
         <latest>now</latest>
       </default>
     </input>
@@ -46,21 +49,21 @@
       <initialValue>clientip,clienthost</initialValue>
       <delimiter> </delimiter>
     </input>
-  <input type="checkbox" token="how" searchWhenChanged="true">
-  <label>how</label>
-  <choice value="values(http_user_agent) as &quot;useragent(s)&quot;">UserAgent(s)</choice>
-  <default></default>
-  <change>
-    <condition value="values(http_user_agent) as &quot;useragent(s)&quot;">
-      <set token="form.txtExclude">$value$</set>
-      <set token="exclude">$value$</set>
-    </condition>
-    <condition>
-      <unset token="exclude" />
-      <unset token="form.txtExclude" />
-    </condition>
-  </change>
-</input>
+    <input type="checkbox" token="how" searchWhenChanged="true">
+      <label>how</label>
+      <choice value="values(http_user_agent) as &quot;useragent(s)&quot;">UserAgent(s)</choice>
+      <default></default>
+      <change>
+        <condition value="values(http_user_agent) as &quot;useragent(s)&quot;">
+          <set token="form.txtExclude">$value$</set>
+          <set token="exclude">$value$</set>
+        </condition>
+        <condition>
+          <unset token="exclude"></unset>
+          <unset token="form.txtExclude"></unset>
+        </condition>
+      </change>
+    </input>
     <input type="text" token="what">
       <label>whatever</label>
       <default>*</default>
@@ -72,38 +75,44 @@
       <table>
         <search base="wwebww">
           <query>
-|search host IN($which$) (munge=*$what$* OR clienthost="*$what$*")
-| stats $how$  values(status) as "status(s)" dc(clientip) as "clientip(s)" dc(url) as "url(s)" sparkline count by $filter$ 
+|search host IN($which$) (munge=*$what$* OR clienthost="*$what$*" OR http_user_agent="*$what$*")
+| stats $how$  values(status) as "status(s)" dc(clientip) as "clientip(s)" dc(uri_path) as "uri(s)" sparkline count by $filter$
 | sort - count</query>
         </search>
         <option name="count">25</option>
         <option name="dataOverlayMode">none</option>
-        <option name="drilldown">none</option>
+        <option name="drilldown">cell</option>
         <option name="percentagesRow">false</option>
         <option name="rowNumbers">false</option>
         <option name="totalsRow">false</option>
         <option name="wrap">true</option>
+        <drilldown>
+          <set token="what">$click.value2$</set>
+        </drilldown>        
+        
       </table>
     </panel>
   </row>
   <row>
     <panel>
-      <html>have fun, do good things.<P> . </P> <P> . </P><P> .  </P><P> . </P>
-<!-- working on getting the check boxes side by side - this part is a work in progress.
+      <html>have fun, do good things.<P> . </P> <P> . </P>
+        <P> .  </P>
+        <P> . </P>
+<!--
       <style>
              #input_checkbox  div[data-component="splunk-core:/splunkjs/mvc/components/Dropdown"]{
              width: 500px !important;
            }
         -->
-<!--           
+<!--          
         #input_checkbox{
           width: 20% !important;
         }
         .control.shared-controls-syntheticcheckboxcontrol.control-default{
           display: inline-block !important;
         }  
-      
-       </style> --> 
+     
+       </style> -->
 </html>
     </panel>
   </row>
