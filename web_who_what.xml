@@ -52,6 +52,7 @@
     <input type="checkbox" token="how" searchWhenChanged="true">
       <label>how</label>
       <choice value="values(http_user_agent) as &quot;useragent(s)&quot;">UserAgent(s)</choice>
+      <choice value="values(referrer) as &quot;referrer(s)&quot;">Referrer(s)</choice>
       <default></default>
       <change>
         <condition value="values(http_user_agent) as &quot;useragent(s)&quot;">
@@ -63,6 +64,7 @@
           <unset token="form.txtExclude"></unset>
         </condition>
       </change>
+      <delimiter> </delimiter>
     </input>
     <input type="text" token="what">
       <label>whatever</label>
@@ -76,8 +78,14 @@
         <search base="wwebww">
           <query>
 |search host IN($which$) (munge=*$what$* OR clienthost="*$what$*" OR http_user_agent="*$what$*")
+
+| eval referrer=if(http_referrer="unknown","",http_referrer)
+
 | stats $how$  values(status) as "status(s)" dc(clientip) as "clientip(s)" dc(uri_path) as "uri(s)" sparkline count by $filter$
-| sort - count</query>
+| sort - count 
+
+| lookup ip_block_list.csv ip AS clientip OUTPUT LastSeen AS BlockedOn
+</query>
         </search>
         <option name="count">25</option>
         <option name="dataOverlayMode">none</option>
@@ -88,8 +96,7 @@
         <option name="wrap">true</option>
         <drilldown>
           <set token="what">$click.value2$</set>
-        </drilldown>        
-        
+        </drilldown>
       </table>
     </panel>
   </row>
@@ -98,7 +105,7 @@
       <html>have fun, do good things.<P> . </P> <P> . </P>
         <P> .  </P>
         <P> . </P>
-<!--
+<!-- playing with horizontal check boxes ...meh 
       <style>
              #input_checkbox  div[data-component="splunk-core:/splunkjs/mvc/components/Dropdown"]{
              width: 500px !important;
