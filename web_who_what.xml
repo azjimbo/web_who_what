@@ -84,7 +84,6 @@
 | stats $how$  values(status) as "status(s)" dc(clientip) as "clientip(s)" dc(uri_path) as "uri(s)" sparkline count by $filter$
 | sort - count 
 
-| lookup ip_block_list.csv ip AS clientip OUTPUT LastSeen AS BlockedOn
 </query>
         </search>
         <option name="count">25</option>
